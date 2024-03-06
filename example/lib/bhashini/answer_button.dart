@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
@@ -13,7 +14,9 @@ import 'package:record/record.dart';
 class AnswerButton extends StatefulWidget {
   const AnswerButton({
     Key? key,
+    required this.answer,
   }) : super(key: key);
+  final String answer;
 
   @override
   State<AnswerButton> createState() => _AnswerButtonState();
@@ -217,10 +220,14 @@ class _AnswerButtonState extends State<AnswerButton> {
         padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         margin: EdgeInsets.only(top: 20),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              'Answer  ',
-              style: TextStyle(fontSize: 16, color: Colors.white),
+            Expanded(
+              child: Text(
+                '${utf8.decode(widget.answer.runes.toList())}  ',
+                style: TextStyle(fontSize: 16, color: Colors.white),
+              ),
             ),
             CircleAvatar(
               backgroundColor: Colors.white,

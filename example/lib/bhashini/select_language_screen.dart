@@ -98,23 +98,46 @@ class _SelectLanguageScreenState extends State<SelectLanguageScreen> {
                   ),
                 ),
                 onPressed: () async {
-                  print(selectedLanguageCode);
-                  await sendTranslationRequest(demoTitle, selectedLanguageCode)
-                      .then((value) {
-                    print(value);
-                    final json = jsonDecode(value);
-                    final t =
-                        json["pipelineResponse"][0]["output"][0]["target"];
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => DemoContentScreen(
-                          demoTitle: t,
-                          demoContent: demoContent,
-                        ),
+                  final value = await sendTranslationRequest(
+                      demoTitle, selectedLanguageCode);
+                  final json = jsonDecode(value);
+                  final t = json["pipelineResponse"][0]["output"][0]["target"];
+                  final value2 = await sendTranslationRequest(
+                      demoContent, selectedLanguageCode);
+                  final json2 = jsonDecode(value2);
+                  final t2 =
+                      json2["pipelineResponse"][0]["output"][0]["target"];
+
+                  final value3 = await sendTranslationRequest(
+                      'Assignment', selectedLanguageCode);
+                  final json3 = jsonDecode(value3);
+                  final t3 =
+                      json3["pipelineResponse"][0]["output"][0]["target"];
+
+                  final value4 = await sendTranslationRequest(
+                      'What is agriculture?', selectedLanguageCode);
+                  final json4 = jsonDecode(value4);
+                  final t4 =
+                      json4["pipelineResponse"][0]["output"][0]["target"];
+
+                  final value5 = await sendTranslationRequest(
+                      'Answer', selectedLanguageCode);
+                  final json5 = jsonDecode(value5);
+                  final t5 =
+                      json5["pipelineResponse"][0]["output"][0]["target"];
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DemoContentScreen(
+                        demoTitle: t,
+                        demoContent: t2,
+                        assignment: t3,
+                        question: t4,
+                        answer: t5,
                       ),
-                    );
-                  });
+                    ),
+                  );
                 },
                 child: Text(
                   buttonText,
