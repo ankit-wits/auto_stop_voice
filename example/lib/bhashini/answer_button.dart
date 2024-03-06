@@ -15,8 +15,12 @@ class AnswerButton extends StatefulWidget {
   const AnswerButton({
     Key? key,
     required this.answer,
+    required this.languageCode,
+    required this.onResponseReceived, // Add this line
   }) : super(key: key);
   final String answer;
+  final String languageCode;
+  final Function(String) onResponseReceived; // Add this line
 
   @override
   State<AnswerButton> createState() => _AnswerButtonState();
@@ -98,17 +102,38 @@ class _AnswerButtonState extends State<AnswerButton> {
     }
   }
 
+  Color btnColor = Colors.blue;
+
+  toggleColor() {
+    if (btnColor == Colors.blue) {
+      btnColor = Colors.red;
+    } else {
+      btnColor = Colors.blue;
+    }
+  }
+
   Future<void> _stopProcessing() async {
     setState(() {
       _isButtonDisabled = true;
+      toggleColor();
     });
 
     try {
       await _voiceProcessor?.stop();
 
       // Stop recording with flutter_sound
-      await record.stop();
-      await _playAudio();
+      // Stop recording with flutter_sound
+      await record.stop().then((value) async {
+        final file = File(value ?? "");
+        final bytes = await file.readAsBytes();
+        final response = await sendRequest(
+          base64Audio: base64Encode(bytes),
+          sourceLanguage: widget.languageCode,
+        );
+        widget.onResponseReceived(
+            response); // Call the callback with the response
+      });
+      // await _playAudio();
     } on PlatformException catch (ex) {
       setState(() {
         _errorMessage = "Failed to stop recorder: " + ex.toString();
@@ -191,7 +216,6 @@ class _AnswerButtonState extends State<AnswerButton> {
         final _recorder = FlutterSound();
         await _recorder.thePlayer.openPlayer();
         await _recorder.thePlayer.startPlayer(fromURI: file.path);
-        await sendRequest();
       } else {
         setState(() {
           _errorMessage = "No audio file found to play.";
@@ -207,15 +231,14 @@ class _AnswerButtonState extends State<AnswerButton> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      // onTap:
-      //     _isButtonDisabled || _errorMessage != null ? null : _toggleProcessing,
       onTap: () {
-        sendRequest();
+        _isButtonDisabled || _errorMessage != null ? null : _toggleProcessing();
+        toggleColor();
       },
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          color: Colors.blue,
+          color: btnColor,
         ),
         padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         margin: EdgeInsets.only(top: 20),

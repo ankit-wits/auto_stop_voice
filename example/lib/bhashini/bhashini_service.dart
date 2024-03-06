@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-Future<void> sendRequest() async {
+Future<dynamic> sendRequest(
+    {required String base64Audio, required String sourceLanguage}) async {
   var headers = {
     'Accept': '*/*',
     'User-Agent': 'Thunder Client (https://www.thunderclient.com)',
@@ -15,7 +16,7 @@ Future<void> sendRequest() async {
       {
         "taskType": "asr",
         "config": {
-          "language": {"sourceLanguage": "hi"},
+          "language": {"sourceLanguage": sourceLanguage},
           "serviceId": "ai4bharat/conformer-hi-gpu--t4",
           "audioFormat": "flac",
           "samplingRate": 16000
@@ -24,7 +25,7 @@ Future<void> sendRequest() async {
     ],
     "inputData": {
       "audio": [
-        {"audioContent": ""}
+        {"audioContent": base64Audio}
       ]
     }
   });
@@ -36,7 +37,8 @@ Future<void> sendRequest() async {
   );
 
   if (response.statusCode == 200) {
-    print(response.body);
+    print(utf8.decode(response.body.runes.toList()));
+    return utf8.decode(response.body.runes.toList());
   } else {
     print('Request failed with status: ${response.statusCode}.');
   }
