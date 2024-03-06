@@ -1,51 +1,25 @@
-//
-// Copyright 2020-2023 Picovoice Inc.
-//
-// You may not use this file except in compliance with the license. A copy of the license is located in the "LICENSE"
-// file accompanying this source.
-//
-// Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
-// an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
-// specific language governing permissions and limitations under the License.
-//
-
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_sound/flutter_sound.dart';
+import 'package:flutter_sound/public/tau.dart';
 import 'package:flutter_voice_processor/flutter_voice_processor.dart';
-import 'package:flutter_voice_processor_example/bhashini/select_language_screen.dart';
-import 'package:flutter_voice_processor_example/vu_meter_painter.dart';
+import 'package:flutter_voice_processor_example/bhashini/bhashini_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
-void main() {
-  // runApp(MyApp());
-  runApp(MyApp());
-}
+class AnswerButton extends StatefulWidget {
+  const AnswerButton({
+    Key? key,
+  }) : super(key: key);
 
-class MyApp extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Voice Processor Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: SelectLanguageScreen(),
-    );
-  }
+  State<AnswerButton> createState() => _AnswerButtonState();
 }
 
-class RecorderScreen extends StatefulWidget {
-  @override
-  _RecorderScreenState createState() => _RecorderScreenState();
-}
-
-class _RecorderScreenState extends State<RecorderScreen> {
+class _AnswerButtonState extends State<AnswerButton> {
   final int frameLength = 512;
   final int sampleRate = 16000;
   final int volumeHistoryCapacity = 5;
@@ -128,8 +102,10 @@ class _RecorderScreenState extends State<RecorderScreen> {
 
     try {
       await _voiceProcessor?.stop();
+
       // Stop recording with flutter_sound
       await record.stop();
+      await _playAudio();
     } on PlatformException catch (ex) {
       setState(() {
         _errorMessage = "Failed to stop recorder: " + ex.toString();
@@ -174,10 +150,12 @@ class _RecorderScreenState extends State<RecorderScreen> {
     }
     _volumeHistory.add(volumeLevel);
 
-    setState(() {
-      _smoothedVolumeValue =
-          _volumeHistory.reduce((a, b) => a + b) / _volumeHistory.length;
-    });
+    setState(
+      () {
+        _smoothedVolumeValue =
+            _volumeHistory.reduce((a, b) => a + b) / _volumeHistory.length;
+      },
+    );
 
     // Check if volume is below the threshold
     if (volumeLevel < 0.2) {
@@ -210,6 +188,7 @@ class _RecorderScreenState extends State<RecorderScreen> {
         final _recorder = FlutterSound();
         await _recorder.thePlayer.openPlayer();
         await _recorder.thePlayer.startPlayer(fromURI: file.path);
+        await sendRequest();
       } else {
         setState(() {
           _errorMessage = "No audio file found to play.";
@@ -222,85 +201,37 @@ class _RecorderScreenState extends State<RecorderScreen> {
     }
   }
 
-  Color picoBlue = Color.fromRGBO(55, 125, 255, 1);
-
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Voice Processor'),
+    return GestureDetector(
+      // onTap:
+      //     _isButtonDisabled || _errorMessage != null ? null : _toggleProcessing,
+      onTap: () {
+        sendRequest();
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          color: Colors.blue,
         ),
-        body: Column(children: [
-          buildVuMeter(context),
-          buildStartButton(context),
-          buildPlayButton(context), // Add this line
-
-          buildErrorMessage(context)
-        ]),
+        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        margin: EdgeInsets.only(top: 20),
+        child: Row(
+          children: [
+            Text(
+              'Answer  ',
+              style: TextStyle(fontSize: 16, color: Colors.white),
+            ),
+            CircleAvatar(
+              backgroundColor: Colors.white,
+              child: Icon(
+                Icons.mic,
+                color: Colors.black,
+              ),
+            )
+          ],
+        ),
       ),
     );
-  }
-
-  buildPlayButton(BuildContext context) {
-    return ElevatedButton(
-      onPressed: _isProcessing || _errorMessage != null ? null : _playAudio,
-      child: Text("Play", style: TextStyle(fontSize: 20)),
-    );
-  }
-
-  buildVuMeter(BuildContext context) {
-    return Expanded(
-        flex: 2,
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            return Container(
-                alignment: Alignment.bottomCenter,
-                child: CustomPaint(
-                    painter: VuMeterPainter(_smoothedVolumeValue, picoBlue),
-                    size: Size(constraints.maxWidth * 0.95, 50)));
-          },
-        ));
-  }
-
-  buildStartButton(BuildContext context) {
-    final ButtonStyle buttonStyle = ElevatedButton.styleFrom(
-        backgroundColor: picoBlue,
-        shape: CircleBorder(),
-        textStyle: TextStyle(color: Colors.white));
-
-    return Expanded(
-      flex: 2,
-      child: Container(
-          child: SizedBox(
-              width: 150,
-              height: 150,
-              child: ElevatedButton(
-                style: buttonStyle,
-                onPressed: _isButtonDisabled || _errorMessage != null
-                    ? null
-                    : _toggleProcessing,
-                child: Text(_isProcessing ? "Stop" : "Start",
-                    style: TextStyle(fontSize: 30)),
-              ))),
-    );
-  }
-
-  buildErrorMessage(BuildContext context) {
-    return Expanded(
-        flex: 1,
-        child: Container(
-            alignment: Alignment.center,
-            margin: EdgeInsets.all(30),
-            decoration: _errorMessage == null
-                ? null
-                : BoxDecoration(
-                    color: Colors.red, borderRadius: BorderRadius.circular(5)),
-            child: _errorMessage == null
-                ? null
-                : Text(
-                    _errorMessage!,
-                    style: TextStyle(color: Colors.white, fontSize: 20),
-                  )));
   }
 }

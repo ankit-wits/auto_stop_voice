@@ -12,6 +12,8 @@ dependencies:
 
   flutter_sound: ^9.2.13
   flutter_voice_processor:
+  google_fonts: ^6.2.1
+  http: ^1.2.1
   path_provider: ^2.1.2
   record: ^5.0.4
 
