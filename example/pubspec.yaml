@@ -10,8 +10,10 @@ dependencies:
   flutter:
     sdk: flutter
 
+  flutter_sound: ^9.2.13
   flutter_voice_processor:
-    path: ../
+  path_provider: ^2.1.2
+  record: ^5.0.4
 
 dev_dependencies:
   integration_test:
